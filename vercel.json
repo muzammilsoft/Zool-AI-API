@@ -1,7 +1,7 @@
 {
     "version": 2,
     "framework": null,
-    "installCommand": "composer install --no-dev --optimize-autoloader && npm install",
+    "installCommand": "curl -sS https://getcomposer.org/installer | php && php composer.phar install --no-dev --optimize-autoloader && npm install",
     "buildCommand": "npm run build",
     "outputDirectory": "public",
     "rewrites": [
