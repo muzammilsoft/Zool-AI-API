@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "framework": null,
+    "installCommand": "composer install --no-dev --optimize-autoloader && npm install",
+    "buildCommand": "npm run build",
+    "outputDirectory": "public",
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/api/index.php"
+        }
+    ]
+}
