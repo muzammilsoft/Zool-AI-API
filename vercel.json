@@ -1,13 +1,15 @@
 {
-    "version": 2,
-    "framework": null,
-    "installCommand": "curl -sS https://getcomposer.org/installer | php && php composer.phar install --no-dev --optimize-autoloader && npm install",
-    "buildCommand": "npm run build",
-    "outputDirectory": "public",
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/api/index.php"
-        }
-    ]
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/index.ts"
+    }
+  ]
 }

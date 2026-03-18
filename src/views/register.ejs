@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 600px; background: #fff; padding: 20px; border-radius: 8px; margin: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #555; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .error { color: red; text-align: center; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>طلب الحصول على مفتاح API</h1>
+        <% if (locals.error) { %>
+            <div class="error"><%= error %></div>
+        <% } %>
+        <form action="/register" method="POST">
+            <div class="form-group">
+                <label>الاسم الأول:</label>
+                <input type="text" name="first_name" required>
+            </div>
+            <div class="form-group">
+                <label>اسم العائلة:</label>
+                <input type="text" name="last_name" required>
+            </div>
+            <div class="form-group">
+                <label>البريد الإلكتروني:</label>
+                <input type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label>الشركة (اختياري):</label>
+                <input type="text" name="company">
+            </div>
+            <div class="form-group">
+                <label>لماذا تريد استخدام Zool-AI API؟</label>
+                <textarea name="reason" rows="4" required></textarea>
+            </div>
+            <button type="submit">إرسال الطلب</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>توثيق Zool-AI API</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: auto; padding: 20px; background-color: #f9f9f9; }
+        header { text-align: center; margin-bottom: 40px; }
+        h1 { color: #007bff; }
+        .section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        code { background: #eee; padding: 2px 5px; border-radius: 3px; font-family: 'Courier New', Courier, monospace; }
+        pre { background: #2d2d2d; color: #ccc; padding: 15px; border-radius: 5px; overflow-x: auto; direction: ltr; text-align: left; }
+        .endpoint { color: #28a745; font-weight: bold; }
+        .method { color: #fd7e14; font-weight: bold; }
+        .tabs { display: flex; border-bottom: 1px solid #ccc; margin-bottom: 15px; }
+        .tab { padding: 10px 20px; cursor: pointer; border: 1px solid transparent; border-bottom: none; }
+        .tab.active { background: white; border-color: #ccc; border-bottom: 1px solid white; font-weight: bold; }
+        .code-block { display: none; }
+        .code-block.active { display: block; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>دليل استخدام Zool-AI API</h1>
+        <p>واجهة برمجية متكاملة لطلبات الذكاء الاصطناعي (نصوص، صور، فيديو، صوت)</p>
+        <a href="/register">احصل على مفتاح API الخاص بك</a>
+    </header>
+
+    <div class="section">
+        <h2>1. توليد النصوص (Chat)</h2>
+        <p><span class="method">POST</span> <span class="endpoint">/v1/chat</span></p>
+        <p>تستخدم هذه الواجهة لإرسال طلبات الدردشة مع الحفاظ على سياق المحادثة (Session).</p>
+
+        <div class="tabs" id="chat-tabs">
+            <div class="tab active" onclick="showTab('chat', 'curl')">cURL</div>
+            <div class="tab" onclick="showTab('chat', 'python')">Python</div>
+            <div class="tab" onclick="showTab('chat', 'js')">JavaScript</div>
+        </div>
+
+        <div id="chat-curl" class="code-block active">
+<pre>curl -X POST https://zoolai-api.vercel.app/v1/chat \
+-H "Content-Type: application/json" \
+-H "x-api-key: YOUR_API_KEY" \
+-d '{
+  "model": "gpt-4o",
+  "session": "user-unique-session-id",
+  "messages": [{"role": "user", "content": "مرحباً، كيف حالك؟"}],
+  "source": "zoolai"
+}'</pre>
+        </div>
+
+        <div id="chat-python" class="code-block">
+<pre>import requests
+
+url = "https://zoolai-api.vercel.app/v1/chat"
+headers = {
+    "x-api-key": "YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+data = {
+    "model": "gpt-4o",
+    "session": "session-123",
+    "messages": [{"role": "user", "content": "مرحباً"}],
+    "source": "zoolai"
+}
+
+response = requests.post(url, json=data, headers=headers)
+print(response.json())</pre>
+        </div>
+
+        <div id="chat-js" class="code-block">
+<pre>fetch('https://zoolai-api.vercel.app/v1/chat', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-api-key': 'YOUR_API_KEY'
+  },
+  body: JSON.stringify({
+    model: 'gpt-4o',
+    session: 'session-123',
+    messages: [{ role: 'user', content: 'مرحباً' }],
+    source: 'zoolai'
+  })
+})
+.then(res => res.json())
+.then(console.log);</pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>2. توليد الصور (Images)</h2>
+        <p><span class="method">POST</span> <span class="endpoint">/v1/image</span></p>
+        <pre>{
+  "prompt": "صورة لمنظر طبيعي في السودان",
+  "width": 1024,
+  "height": 768
+}</pre>
+    </div>
+
+    <div class="section">
+        <h2>3. توليد الفيديو (Video)</h2>
+        <p><span class="method">POST</span> <span class="endpoint">/v1/video</span></p>
+        <pre>{
+  "prompt": "طائر يحلق فوق النيل"
+}</pre>
+    </div>
+
+    <div class="section">
+        <h2>4. تحويل النص إلى صوت (TTS)</h2>
+        <p><span class="method">POST</span> <span class="endpoint">/v1/audio/speech</span></p>
+        <pre>{
+  "text": "مرحباً بكم في زولاي",
+  "voice": "nova"
+}</pre>
+    </div>
+
+    <script>
+        function showTab(section, lang) {
+            document.querySelectorAll('#' + section + '-tabs .tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#' + section + '-tabs + div + div + div, #' + section + '-tabs + div, #' + section + '-tabs + div + div').forEach(b => b.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(section + '-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+</html>

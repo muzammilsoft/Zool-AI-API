@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; padding: 20px; border-radius: 8px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
+        th { background-color: #f2f2f2; color: #333; }
+        .status-active { color: #28a745; font-weight: bold; }
+        .status-inactive { color: #dc3545; font-weight: bold; }
+        .form-section { margin-top: 40px; border-top: 2px solid #ddd; padding-top: 20px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>لوحة التحكم - Zool-AI API</h1>
+
+        <h2>المفاتيح الحالية</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>المفتاح</th>
+                    <th>الاسم</th>
+                    <th>البريد</th>
+                    <th>النوع</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% keys.forEach(function(key) { %>
+                    <tr>
+                        <td><code><%= key.key %></code></td>
+                        <td><%= key.first_name %> <%= key.last_name %></td>
+                        <td><%= key.email %></td>
+                        <td><%= key.type %></td>
+                        <td class="status-<%= key.status %>"><%= key.status %></td>
+                        <td>
+                            <form action="/admin/toggle-key" method="POST" style="display:inline;">
+                                <input type="hidden" name="id" value="<%= key.id %>">
+                                <input type="hidden" name="status" value="<%= key.status === 'active' ? 'inactive' : 'active' %>">
+                                <button type="submit" style="background-color: <%= key.status === 'active' ? '#dc3545' : '#28a745' %>;">
+                                    <%= key.status === 'active' ? 'تعطيل' : 'تفعيل' %>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+
+        <div class="form-section">
+            <h2>إنشاء مفتاح جديد</h2>
+            <form action="/admin/create-key" method="POST">
+                <div class="form-group">
+                    <label>الاسم الأول:</label>
+                    <input type="text" name="first_name" required>
+                </div>
+                <div class="form-group">
+                    <label>اسم العائلة:</label>
+                    <input type="text" name="last_name" required>
+                </div>
+                <div class="form-group">
+                    <label>البريد الإلكتروني:</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label>النوع:</label>
+                    <select name="type">
+                        <option value="standard">Standard</option>
+                        <option value="premium">Premium</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>حد الدردشة:</label>
+                    <input type="number" name="limit_chat" value="1000">
+                </div>
+                <div class="form-group">
+                    <label>حد الصور:</label>
+                    <input type="number" name="limit_image" value="100">
+                </div>
+                <button type="submit">إنشاء المفتاح</button>
+            </form>
+        </div>
+
+        <div class="form-section">
+            <h2>طلبات المطورين المعلقة</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>البريد</th>
+                        <th>الشركة</th>
+                        <th>السبب</th>
+                        <th>التاريخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% requests.forEach(function(req) { %>
+                        <tr>
+                            <td><%= req.first_name %> <%= req.last_name %></td>
+                            <td><%= req.email %></td>
+                            <td><%= req.company %></td>
+                            <td><%= req.reason %></td>
+                            <td><%= new Date(req.created_at).toLocaleString('ar-EG') %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
