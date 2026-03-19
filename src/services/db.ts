@@ -1,7 +1,12 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const dbPath = path.resolve(__dirname, '../../database.sqlite');
+// On Vercel, the only writable directory is /tmp
+const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
+const dbPath = isVercel
+  ? path.join('/tmp', 'database.sqlite')
+  : path.resolve(process.cwd(), 'database.sqlite');
+
 const db = new Database(dbPath);
 
 // Initialize Tables

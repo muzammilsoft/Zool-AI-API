@@ -5,7 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const path_1 = __importDefault(require("path"));
-const dbPath = path_1.default.resolve(__dirname, '../../database.sqlite');
+// On Vercel, the only writable directory is /tmp
+const isVercel = process.env.VERCEL || process.env.NOW_BUILDER;
+const dbPath = isVercel
+    ? path_1.default.join('/tmp', 'database.sqlite')
+    : path_1.default.resolve(process.cwd(), 'database.sqlite');
 const db = new better_sqlite3_1.default(dbPath);
 // Initialize Tables
 db.exec(`
