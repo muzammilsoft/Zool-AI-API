@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import db from '../services/db';
+import { getDb } from '../services/db';
 
-export const validateApiKey = (req: Request, res: Response, next: NextFunction) => {
+export const validateApiKey = async (req: Request, res: Response, next: NextFunction) => {
   const apiKey = req.headers['x-api-key'] || req.headers['authorization'];
 
   if (!apiKey || typeof apiKey !== 'string') {
@@ -18,7 +18,8 @@ export const validateApiKey = (req: Request, res: Response, next: NextFunction) 
   }
 
   // 2. Check Database
-  const keyData = db.prepare('SELECT * FROM api_keys WHERE key = ? AND is_active = 1').get(cleanKey) as any;
+  const db = getDb();
+  const keyData = await db.get('SELECT * FROM api_keys WHERE key = ? AND is_active = 1', cleanKey);
 
   if (!keyData) {
     return res.status(401).json({ status: 'error', message: 'مفتاح API غير صالح أو غير مفعل.' });
@@ -33,13 +34,15 @@ export const validateApiKey = (req: Request, res: Response, next: NextFunction) 
 };
 
 export const validateSource = (req: Request, res: Response, next: NextFunction) => {
-  const source = req.body.source || req.query.source;
+  const source = req.body.source || req.query.source || req.headers['x-source'];
   const allowedSources = ['zoolai', 'iai'];
 
-  if (!source || !allowedSources.includes(source as string)) {
-    // Only enforce if requested? User said "I will name them later",
-    // but specified zoolai and iai now.
-    // return res.status(403).json({ status: 'error', message: 'مصدر الطلب غير معتمد.' });
+  if (!source) {
+      return res.status(403).json({ status: 'error', message: 'مصدر الطلب (source) مطلوب.' });
+  }
+
+  if (!allowedSources.includes(source as string)) {
+    return res.status(403).json({ status: 'error', message: 'مصدر الطلب غير معتمد.' });
   }
   next();
 };

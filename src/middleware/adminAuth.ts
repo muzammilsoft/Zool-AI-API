@@ -1,16 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 
-export const adminAuth = (req: Request, res: Response, next: NextFunction) => {
-  const adminPassword = process.env.ADMIN_PASSWORD || 'zoolai_admin_2025';
+declare module 'express-session' {
+  interface SessionData {
+    adminId: number;
+    adminEmail: string;
+  }
+}
 
-  // Basic Auth or custom header for simplicity as requested
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
-    // If it's a browser request, check for session or cookies (let's use a simple query param for now)
-    if (req.query.pw === adminPassword) {
-      return next();
+export const adminAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.session.adminId) {
+    if (req.xhr || req.headers.accept?.includes('json')) {
+      return res.status(401).json({ status: 'error', message: 'غير مصرح لك بالدخول.' });
     }
-    return res.status(401).send('غير مصرح لك بالدخول.');
+    return res.redirect('/admin/login');
   }
   next();
 };

@@ -7,7 +7,9 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: auto; padding: 20px; border-radius: 8px; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { color: #333; text-align: center; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 20px; }
+        .logout-btn { background-color: #6c757d; color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; font-size: 14px; }
+        h1 { color: #333; margin: 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
         th { background-color: #f2f2f2; color: #333; }
@@ -22,7 +24,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>لوحة التحكم - Zool-AI API</h1>
+        <div class="header">
+            <h1>لوحة التحكم - Zool-AI API</h1>
+            <div>
+                <span>مرحباً، <%= adminEmail %></span>
+                <a href="/admin/logout" class="logout-btn" style="margin-right: 10px;">تسجيل خروج</a>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>إعدادات الحساب</h2>
+            <form action="/admin/profile" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
+                <div class="form-group" style="flex: 1;">
+                    <label>البريد الإلكتروني:</label>
+                    <input type="email" name="email" value="<%= adminEmail %>" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>كلمة المرور الجديدة (اتركها فارغة للحفاظ على الحالية):</label>
+                    <input type="password" name="password" placeholder="••••••••">
+                </div>
+                <button type="submit" style="height: 40px; margin-bottom: 10px;">تحديث البروفايل</button>
+            </form>
+        </div>
 
         <h2>المفاتيح الحالية</h2>
         <table>

@@ -1,11 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateSource = exports.validateApiKey = void 0;
-const db_1 = __importDefault(require("../services/db"));
-const validateApiKey = (req, res, next) => {
+const db_1 = require("../services/db");
+const validateApiKey = async (req, res, next) => {
     const apiKey = req.headers['x-api-key'] || req.headers['authorization'];
     if (!apiKey || typeof apiKey !== 'string') {
         return res.status(401).json({ status: 'error', message: 'مفتاح API غير متوفر.' });
@@ -18,7 +15,8 @@ const validateApiKey = (req, res, next) => {
         return next();
     }
     // 2. Check Database
-    const keyData = db_1.default.prepare('SELECT * FROM api_keys WHERE key = ? AND is_active = 1').get(cleanKey);
+    const db = (0, db_1.getDb)();
+    const keyData = await db.get('SELECT * FROM api_keys WHERE key = ? AND is_active = 1', cleanKey);
     if (!keyData) {
         return res.status(401).json({ status: 'error', message: 'مفتاح API غير صالح أو غير مفعل.' });
     }
@@ -30,12 +28,13 @@ const validateApiKey = (req, res, next) => {
 };
 exports.validateApiKey = validateApiKey;
 const validateSource = (req, res, next) => {
-    const source = req.body.source || req.query.source;
+    const source = req.body.source || req.query.source || req.headers['x-source'];
     const allowedSources = ['zoolai', 'iai'];
-    if (!source || !allowedSources.includes(source)) {
-        // Only enforce if requested? User said "I will name them later",
-        // but specified zoolai and iai now.
-        // return res.status(403).json({ status: 'error', message: 'مصدر الطلب غير معتمد.' });
+    if (!source) {
+        return res.status(403).json({ status: 'error', message: 'مصدر الطلب (source) مطلوب.' });
+    }
+    if (!allowedSources.includes(source)) {
+        return res.status(403).json({ status: 'error', message: 'مصدر الطلب غير معتمد.' });
     }
     next();
 };

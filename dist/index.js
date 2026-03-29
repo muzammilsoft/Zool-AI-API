@@ -37,36 +37,59 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const express_session_1 = __importDefault(require("express-session"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const api_1 = __importDefault(require("./routes/api"));
 const AdminController = __importStar(require("./controllers/AdminController"));
 const adminAuth_1 = require("./middleware/adminAuth");
+const db_1 = require("./services/db");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3000;
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
+app.use((0, express_session_1.default)({
+    secret: process.env.SESSION_SECRET || 'zoolai_secret_key_2025',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
+}));
 app.set('view engine', 'ejs');
 app.set('views', path_1.default.join(process.cwd(), 'src/views'));
 app.use(express_1.default.static(path_1.default.join(process.cwd(), 'public')));
-app.get('/', (req, res) => {
-    res.render('index', { title: 'Zool-AI API' });
-});
-app.get('/docs', (req, res) => {
-    res.render('docs', { title: 'Documentation - Zool-AI API' });
-});
-app.use('/v1', api_1.default);
-// Public Routes
-app.get('/register', AdminController.showRegistrationForm);
-app.post('/register', AdminController.registerDeveloper);
-// Admin Routes
-app.get('/admin', adminAuth_1.adminAuth, AdminController.showAdminDashboard);
-app.post('/admin/create-key', adminAuth_1.adminAuth, AdminController.createKey);
-app.post('/admin/toggle-key', adminAuth_1.adminAuth, AdminController.toggleKeyStatus);
-app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
+// Initialize database then start the server
+(0, db_1.initDb)().then(async () => {
+    console.log('Database initialized successfully.');
+    // Initialize default admin
+    await AdminController.initializeAdmin();
+    app.get('/', (req, res) => {
+        res.render('index', { title: 'Zool-AI API' });
+    });
+    app.get('/docs', (req, res) => {
+        res.render('docs', { title: 'Documentation - Zool-AI API' });
+    });
+    app.use('/v1', api_1.default);
+    // Public Routes
+    app.get('/register', AdminController.showRegistrationForm);
+    app.post('/register', AdminController.registerDeveloper);
+    // Admin Auth Routes
+    app.get('/admin/login', AdminController.showLoginForm);
+    app.post('/admin/login', AdminController.login);
+    app.get('/admin/logout', AdminController.logout);
+    // Admin Dashboard Routes
+    app.get('/admin', adminAuth_1.adminAuth, AdminController.showAdminDashboard);
+    app.post('/admin/profile', adminAuth_1.adminAuth, AdminController.updateAdminProfile);
+    app.post('/admin/create-key', adminAuth_1.adminAuth, AdminController.createKey);
+    app.post('/admin/toggle-key', adminAuth_1.adminAuth, AdminController.toggleKeyStatus);
+    if (process.env.NODE_ENV !== 'test') {
+        app.listen(port, () => {
+            console.log(`Server is running at http://localhost:${port}`);
+        });
+    }
+}).catch(err => {
+    console.error('Failed to initialize database:', err);
 });
 exports.default = app;

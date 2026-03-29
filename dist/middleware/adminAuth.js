@@ -2,15 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.adminAuth = void 0;
 const adminAuth = (req, res, next) => {
-    const adminPassword = process.env.ADMIN_PASSWORD || 'zoolai_admin_2025';
-    // Basic Auth or custom header for simplicity as requested
-    const authHeader = req.headers['authorization'];
-    if (!authHeader || authHeader !== `Bearer ${adminPassword}`) {
-        // If it's a browser request, check for session or cookies (let's use a simple query param for now)
-        if (req.query.pw === adminPassword) {
-            return next();
+    if (!req.session.adminId) {
+        if (req.xhr || req.headers.accept?.includes('json')) {
+            return res.status(401).json({ status: 'error', message: 'غير مصرح لك بالدخول.' });
         }
-        return res.status(401).send('غير مصرح لك بالدخول.');
+        return res.redirect('/admin/login');
     }
     next();
 };
