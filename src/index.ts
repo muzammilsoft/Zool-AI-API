@@ -16,55 +16,70 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'zoolai_secret_key_2025',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 }
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'lax'
+  }
 }));
+
 app.set('view engine', 'ejs');
+// For Vercel, views should be referenced relative to the project root
 app.set('views', path.join(process.cwd(), 'src/views'));
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Initialize database then start the server
-initDb().then(async () => {
-  console.log('Database initialized successfully.');
-
-  // Initialize default admin
-  await AdminController.initializeAdmin();
-
-  app.get('/', (req, res) => {
-    res.render('index', { title: 'Zool-AI API' });
-  });
-
-  app.get('/docs', (req, res) => {
-    res.render('docs', { title: 'Documentation - Zool-AI API' });
-  });
-
-  app.use('/v1', apiRoutes);
-
-  // Public Routes
-  app.get('/register', AdminController.showRegistrationForm);
-  app.post('/register', AdminController.registerDeveloper);
-
-  // Admin Auth Routes
-  app.get('/admin/login', AdminController.showLoginForm);
-  app.post('/admin/login', AdminController.login);
-  app.get('/admin/logout', AdminController.logout);
-
-  // Admin Dashboard Routes
-  app.get('/admin', adminAuth, AdminController.showAdminDashboard);
-  app.post('/admin/profile', adminAuth, AdminController.updateAdminProfile);
-  app.post('/admin/create-key', adminAuth, AdminController.createKey);
-  app.post('/admin/toggle-key', adminAuth, AdminController.toggleKeyStatus);
-
-  if (process.env.NODE_ENV !== 'test') {
-    app.listen(port, () => {
-      console.log(`Server is running at http://localhost:${port}`);
-    });
+// Middleware to ensure DB is initialized before each request
+// In a serverless environment, we need to handle this carefully.
+let dbInitialized = false;
+const ensureDb = async (req: any, res: any, next: any) => {
+  if (!dbInitialized) {
+    try {
+      await initDb();
+      await AdminController.initializeAdmin();
+      dbInitialized = true;
+    } catch (err) {
+      console.error('Database initialization error:', err);
+      return res.status(500).send('Database Error');
+    }
   }
-}).catch(err => {
-  console.error('Failed to initialize database:', err);
+  next();
+};
+
+app.get('/', (req, res) => {
+  res.render('index', { title: 'Zool-AI API' });
 });
+
+app.get('/docs', (req, res) => {
+  res.render('docs', { title: 'Documentation - Zool-AI API' });
+});
+
+// All API and Admin routes need DB access
+app.use('/v1', ensureDb, apiRoutes);
+
+// Public Routes
+app.get('/register', AdminController.showRegistrationForm);
+app.post('/register', ensureDb, AdminController.registerDeveloper);
+
+// Admin Auth Routes
+app.get('/admin/login', AdminController.showLoginForm);
+app.post('/admin/login', ensureDb, AdminController.login);
+app.get('/admin/logout', AdminController.logout);
+
+// Admin Dashboard Routes
+app.get('/admin', adminAuth, ensureDb, AdminController.showAdminDashboard);
+app.post('/admin/profile', adminAuth, ensureDb, AdminController.updateAdminProfile);
+app.post('/admin/create-key', adminAuth, ensureDb, AdminController.createKey);
+app.post('/admin/toggle-key', adminAuth, ensureDb, AdminController.toggleKeyStatus);
+
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+  });
+}
 
 export default app;

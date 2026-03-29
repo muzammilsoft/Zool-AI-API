@@ -1,9 +1,7 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import redis from '../services/redis';
-import { get_encoding } from 'tiktoken';
-
-const encoding = get_encoding('cl100k_base');
+import { encode } from 'gpt-3-encoder';
 
 export const chat = async (req: Request, res: Response) => {
   const { model, session, messages, source, tools } = req.body;
@@ -20,20 +18,25 @@ export const chat = async (req: Request, res: Response) => {
 
   // 1. Manage Session History via Redis (TTL: 5 mins)
   const sessionKey = `session:${session}`;
-  const historyData = await redis.get(sessionKey);
-  let history = historyData ? JSON.parse(historyData) : [];
+  let history = [];
+  try {
+    const historyData = await redis.get(sessionKey);
+    history = historyData ? JSON.parse(historyData) : [];
+  } catch (err) {
+    console.warn('Redis error:', err);
+  }
 
-  // 2. Token Counting (tiktoken)
+  // 2. Token Counting (gpt-3-encoder)
   const countTokens = (msgs: any[]) => {
     let tokens = 0;
     msgs.forEach((m: any) => {
-      tokens += encoding.encode(m.role).length;
-      tokens += encoding.encode(m.content).length;
+      tokens += encode(m.role || '').length;
+      tokens += encode(m.content || '').length;
     });
     return tokens;
   };
 
-  const newUserTokens = encoding.encode(userMessageContent).length;
+  const newUserTokens = encode(userMessageContent).length;
   let totalTokens = countTokens(history) + newUserTokens;
 
   // 3. Clear History if limit reached (6500 tokens)
@@ -68,7 +71,11 @@ export const chat = async (req: Request, res: Response) => {
     history.push({ role: 'assistant', content: aiContent });
 
     // Store in Redis with 5 min TTL
-    await redis.setex(sessionKey, 300, JSON.stringify(history));
+    try {
+      await redis.setex(sessionKey, 300, JSON.stringify(history));
+    } catch (err) {
+      console.warn('Redis set error:', err);
+    }
 
     return res.json({
       status: 'success',

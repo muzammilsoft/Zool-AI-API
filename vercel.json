@@ -5,7 +5,10 @@
       "src": "src/index.ts",
       "use": "@vercel/node",
       "config": {
-        "nodeVersion": "20.x"
+        "includeFiles": [
+          "src/views/**",
+          "public/**"
+        ]
       }
     }
   ],
@@ -14,8 +17,5 @@
       "src": "/(.*)",
       "dest": "src/index.ts"
     }
-  ],
-  "env": {
-    "NODE_OPTIONS": "--no-warnings"
-  }
+  ]
 }
