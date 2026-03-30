@@ -112,7 +112,15 @@ export const logout = (req: Request, res: Response) => {
 
 export const showAdminDashboard = async (req: Request, res: Response) => {
   const db = getDb();
-  const keys = await db.all('SELECT * FROM api_keys');
+  // Fetch keys with their usage summary
+  const keys = await db.all(`
+    SELECT k.*,
+           COUNT(s.id) as total_requests,
+           SUM(s.tokens_used) as total_tokens
+    FROM api_keys k
+    LEFT JOIN usage_stats s ON k.id = s.key_id
+    GROUP BY k.id
+  `);
   const requests = await db.all('SELECT * FROM developer_requests ORDER BY created_at DESC');
   const admin = await db.get('SELECT email FROM admins WHERE id = ?', req.session.adminId);
   res.render('admin/dashboard', { keys, requests, title: 'Admin Dashboard', adminEmail: admin.email });

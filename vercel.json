@@ -6,8 +6,7 @@
       "use": "@vercel/node",
       "config": {
         "includeFiles": [
-          "src/views/**",
-          "public/**"
+          "src/views/**"
         ]
       }
     }

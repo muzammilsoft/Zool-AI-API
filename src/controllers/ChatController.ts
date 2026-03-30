@@ -2,9 +2,11 @@ import { Request, Response } from 'express';
 import axios from 'axios';
 import redis from '../services/redis';
 import { encode } from 'gpt-3-encoder';
+import { getDb } from '../services/db';
 
 export const chat = async (req: Request, res: Response) => {
   const { model, session, messages, source, tools } = req.body;
+  const apiKeyData = (req as any).apiKeyData;
 
   if (!model || !session) {
     return res.status(400).json({ status: 'error', message: 'model and session are required.' });
@@ -58,7 +60,6 @@ export const chat = async (req: Request, res: Response) => {
       model,
       messages: fullMessages,
       tools: tools || [],
-      // Compatible with OpenAI
     }, {
       headers: { 'Authorization': `Bearer ${process.env.POLLINATIONS_API_KEY}` }
     });
@@ -70,11 +71,20 @@ export const chat = async (req: Request, res: Response) => {
     history.push({ role: 'user', content: userMessageContent });
     history.push({ role: 'assistant', content: aiContent });
 
+    const aiTokens = encode(aiContent).length;
+
     // Store in Redis with 5 min TTL
     try {
       await redis.setex(sessionKey, 300, JSON.stringify(history));
     } catch (err) {
       console.warn('Redis set error:', err);
+    }
+
+    // 6. Log Usage Statistics
+    if (apiKeyData && !apiKeyData.is_absolute) {
+      const db = getDb();
+      await db.run('INSERT INTO usage_stats (key_id, endpoint, status_code, tokens_used) VALUES (?, ?, ?, ?)',
+        apiKeyData.id, '/v1/chat', 200, newUserTokens + aiTokens);
     }
 
     return res.json({
@@ -86,12 +96,18 @@ export const chat = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Chat error:', error.response?.data || error.message);
     const status = error.response?.status || 500;
-    const details = error.response?.data || { message: 'Internal Server Error' };
+
+    // Log Error Usage
+    if (apiKeyData && !apiKeyData.is_absolute) {
+      const db = getDb();
+      await db.run('INSERT INTO usage_stats (key_id, endpoint, status_code, tokens_used) VALUES (?, ?, ?, ?)',
+        apiKeyData.id, '/v1/chat', status, 0);
+    }
 
     return res.status(status).json({
       status: 'error',
       message: 'حدث خطأ من مزود الخدمة.',
-      details
+      details: error.response?.data || { message: 'Internal Server Error' }
     });
   }
 };

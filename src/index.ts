@@ -29,12 +29,17 @@ app.use(session({
 }));
 
 app.set('view engine', 'ejs');
-// For Vercel, views should be referenced relative to the project root
-app.set('views', path.join(process.cwd(), 'src/views'));
+
+// For Vercel, the views directory is bundled with the source.
+// Using process.cwd() ensures it points to the project root where views/ is located.
+// On Vercel, everything is flattened.
+const viewsDir = process.env.VERCEL
+  ? path.join(process.cwd(), 'src', 'views')
+  : path.join(__dirname, 'views');
+
+app.set('views', viewsDir);
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Middleware to ensure DB is initialized before each request
-// In a serverless environment, we need to handle this carefully.
 let dbInitialized = false;
 const ensureDb = async (req: any, res: any, next: any) => {
   if (!dbInitialized) {
@@ -44,29 +49,27 @@ const ensureDb = async (req: any, res: any, next: any) => {
       dbInitialized = true;
     } catch (err) {
       console.error('Database initialization error:', err);
-      return res.status(500).send('Database Error');
     }
   }
   next();
 };
 
-app.get('/', (req, res) => {
+app.get('/', ensureDb, (req, res) => {
   res.render('index', { title: 'Zool-AI API' });
 });
 
-app.get('/docs', (req, res) => {
+app.get('/docs', ensureDb, (req, res) => {
   res.render('docs', { title: 'Documentation - Zool-AI API' });
 });
 
-// All API and Admin routes need DB access
 app.use('/v1', ensureDb, apiRoutes);
 
 // Public Routes
-app.get('/register', AdminController.showRegistrationForm);
+app.get('/register', ensureDb, AdminController.showRegistrationForm);
 app.post('/register', ensureDb, AdminController.registerDeveloper);
 
 // Admin Auth Routes
-app.get('/admin/login', AdminController.showLoginForm);
+app.get('/admin/login', ensureDb, AdminController.showLoginForm);
 app.post('/admin/login', ensureDb, AdminController.login);
 app.get('/admin/logout', AdminController.logout);
 
@@ -76,7 +79,7 @@ app.post('/admin/profile', adminAuth, ensureDb, AdminController.updateAdminProfi
 app.post('/admin/create-key', adminAuth, ensureDb, AdminController.createKey);
 app.post('/admin/toggle-key', adminAuth, ensureDb, AdminController.toggleKeyStatus);
 
-if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
   });

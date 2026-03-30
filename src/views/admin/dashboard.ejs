@@ -20,6 +20,7 @@
         label { display: block; margin-bottom: 5px; }
         input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        .usage-badge { background-color: #e9ecef; padding: 3px 8px; border-radius: 12px; font-size: 0.85em; }
     </style>
 </head>
 <body>
@@ -47,14 +48,15 @@
             </form>
         </div>
 
-        <h2>المفاتيح الحالية</h2>
+        <h2>المفاتيح الحالية والإحصائيات</h2>
         <table>
             <thead>
                 <tr>
                     <th>المفتاح</th>
-                    <th>الاسم</th>
-                    <th>البريد</th>
+                    <th>الاسم والبريد</th>
                     <th>النوع</th>
+                    <th>الطلبات</th>
+                    <th>التوكنز</th>
                     <th>الحالة</th>
                     <th>الإجراءات</th>
                 </tr>
@@ -63,9 +65,13 @@
                 <% keys.forEach(function(key) { %>
                     <tr>
                         <td><code><%= key.key %></code></td>
-                        <td><%= key.first_name %> <%= key.last_name %></td>
-                        <td><%= key.email %></td>
+                        <td>
+                            <strong><%= key.first_name %> <%= key.last_name %></strong><br>
+                            <small><%= key.email %></small>
+                        </td>
                         <td><%= key.type %></td>
+                        <td><span class="usage-badge"><%= key.total_requests || 0 %></span></td>
+                        <td><span class="usage-badge"><%= key.total_tokens || 0 %></span></td>
                         <td class="status-<%= key.status %>"><%= key.status %></td>
                         <td>
                             <form action="/admin/toggle-key" method="POST" style="display:inline;">
@@ -83,7 +89,7 @@
 
         <div class="form-section">
             <h2>إنشاء مفتاح جديد</h2>
-            <form action="/admin/create-key" method="POST">
+            <form action="/admin/create-key" method="POST" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
                 <div class="form-group">
                     <label>الاسم الأول:</label>
                     <input type="text" name="first_name" required>
@@ -111,7 +117,9 @@
                     <label>حد الصور:</label>
                     <input type="number" name="limit_image" value="100">
                 </div>
-                <button type="submit">إنشاء المفتاح</button>
+                <div style="grid-column: span 3; text-align: left;">
+                    <button type="submit" style="width: 200px;">إنشاء المفتاح</button>
+                </div>
             </form>
         </div>
 
