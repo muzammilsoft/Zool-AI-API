@@ -8,6 +8,11 @@ export const chat = async (req: Request, res: Response) => {
   const { model, session, messages, source, tools } = req.body;
   const apiKeyData = (req as any).apiKeyData;
 
+  const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+  if (!pollinationsKey) {
+    return res.status(500).json({ status: 'error', message: 'Pollinations API key is not configured.' });
+  }
+
   if (!model || !session) {
     return res.status(400).json({ status: 'error', message: 'model and session are required.' });
   }
@@ -61,7 +66,7 @@ export const chat = async (req: Request, res: Response) => {
       messages: fullMessages,
       tools: tools || [],
     }, {
-      headers: { 'Authorization': `Bearer ${process.env.POLLINATIONS_API_KEY}` }
+      headers: { 'Authorization': `Bearer ${pollinationsKey}` }
     });
 
     const aiResponse = response.data.choices[0].message;

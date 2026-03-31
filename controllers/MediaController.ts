@@ -1,16 +1,24 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { getDb } from '../services/db';
+import redis from '../services/redis';
 
+// Simplified distributed video queue status in Redis
+// In serverless, we don't have a long-running process, but we can track if a prompt is "queued"
 export const generateImage = async (req: Request, res: Response) => {
   const { prompt, width, height, seed, model, nologo, source } = req.body;
   const apiKeyData = (req as any).apiKeyData;
+
+  const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+  if (!pollinationsKey) {
+    return res.status(500).json({ status: 'error', message: 'Pollinations API key is not configured.' });
+  }
 
   if (!prompt) {
     return res.status(400).json({ status: 'error', message: 'prompt is required.' });
   }
 
-  const params: any = { width, height, seed, model, nologo, key: process.env.POLLINATIONS_API_KEY };
+  const params: any = { width, height, seed, model, nologo, key: pollinationsKey };
   const queryString = Object.keys(params)
     .filter(k => params[k] !== undefined)
     .map(k => `${k}=${encodeURIComponent(params[k])}`)
@@ -36,11 +44,22 @@ export const generateVideo = async (req: Request, res: Response) => {
   const { prompt } = req.body;
   const apiKeyData = (req as any).apiKeyData;
 
+  const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+  if (!pollinationsKey) {
+    return res.status(500).json({ status: 'error', message: 'Pollinations API key is not configured.' });
+  }
+
   if (!prompt) {
     return res.status(400).json({ status: 'error', message: 'prompt is required.' });
   }
 
-  const videoUrl = `https://gen.pollinations.ai/video/${encodeURIComponent(prompt)}?key=${process.env.POLLINATIONS_API_KEY}`;
+  const videoUrl = `https://gen.pollinations.ai/video/${encodeURIComponent(prompt)}?key=${pollinationsKey}`;
+
+  // Use Redis to track "queued" items across serverless instances
+  const queueKey = 'video:queue';
+  await redis.lpush(queueKey, prompt);
+  // We trim the queue to avoid infinite growth
+  await redis.ltrim(queueKey, 0, 99);
 
   // Log Usage
   if (apiKeyData && !apiKeyData.is_absolute) {
@@ -52,7 +71,7 @@ export const generateVideo = async (req: Request, res: Response) => {
   return res.json({
     status: 'success',
     video_url: videoUrl,
-    message: 'تم بدء التوليد، يرجى الانتظار حتى اكتمال الفيديو.',
+    message: 'تم إضافة طلبك إلى قائمة الانتظار، سيتم توليد الفيديو قريباً.',
     created_at: new Date().toISOString()
   });
 };
@@ -61,11 +80,16 @@ export const textToSpeech = async (req: Request, res: Response) => {
   const { text, voice } = req.body;
   const apiKeyData = (req as any).apiKeyData;
 
+  const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+  if (!pollinationsKey) {
+    return res.status(500).json({ status: 'error', message: 'Pollinations API key is not configured.' });
+  }
+
   if (!text) {
     return res.status(400).json({ status: 'error', message: 'text is required.' });
   }
 
-  const audioUrl = `https://gen.pollinations.ai/audio/${encodeURIComponent(text)}?voice=${voice || 'nova'}&key=${process.env.POLLINATIONS_API_KEY}`;
+  const audioUrl = `https://gen.pollinations.ai/audio/${encodeURIComponent(text)}?voice=${voice || 'nova'}&key=${pollinationsKey}`;
 
   // Log Usage
   if (apiKeyData && !apiKeyData.is_absolute) {
@@ -83,6 +107,11 @@ export const textToSpeech = async (req: Request, res: Response) => {
 
 export const transcribe = async (req: Request, res: Response) => {
   const apiKeyData = (req as any).apiKeyData;
+  const pollinationsKey = process.env.POLLINATIONS_API_KEY;
+
+  if (!pollinationsKey) {
+    return res.status(500).json({ status: 'error', message: 'Pollinations API key is not configured.' });
+  }
 
   if (!req.file) {
     return res.status(400).json({ status: 'error', message: 'file is required.' });
@@ -96,7 +125,7 @@ export const transcribe = async (req: Request, res: Response) => {
 
     const response = await axios.post('https://gen.pollinations.ai/v1/audio/transcriptions', formData, {
       headers: {
-        'Authorization': `Bearer ${process.env.POLLINATIONS_API_KEY}`,
+        'Authorization': `Bearer ${pollinationsKey}`,
         'Content-Type': 'multipart/form-data'
       }
     });

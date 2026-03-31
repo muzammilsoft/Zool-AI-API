@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { getDb } from '../services/db';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 // Initialize default admin
 export const initializeAdmin = async () => {
